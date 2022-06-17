@@ -11,7 +11,6 @@ metrics.info('app_info', 'Application info', version='1.0.3')
 @application.route('/test')
 def main():
     raise Exception("Crashing")
-    pass  # requests tracked by default
 
 
 if __name__ == '__main__':

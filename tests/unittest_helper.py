@@ -40,7 +40,7 @@ class BaseTestCase(unittest.TestCase):
                 ), value
             )
         else:
-            pattern = '(?ms).*%s %s.*' % (name, value)
+            pattern = f'(?ms).*{name} {value}.*'
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
@@ -68,7 +68,7 @@ class BaseTestCase(unittest.TestCase):
                 )
             )
         else:
-            pattern = '.*%s [0-9.]+.*' % name
+            pattern = f'.*{name} [0-9.]+.*'
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
