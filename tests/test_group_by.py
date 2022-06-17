@@ -10,7 +10,7 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/<url>')
         def a_test_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/default1')
         self.client.get('/default2')
@@ -34,7 +34,7 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/<url>')
         def a_test_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/default1')
         self.client.get('/default2')
@@ -57,7 +57,7 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/<url>')
         def a_test_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/test1')
         self.client.get('/test2')
@@ -81,11 +81,11 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/test/<item>')
         def first_test_endpoint(item):
-            return item + ' is OK'
+            return f'{item} is OK'
 
         @self.app.route('/get/<sample>')
         def second_test_endpoint(sample):
-            return sample + ' is OK'
+            return f'{sample} is OK'
 
         self.client.get('/test/1')
         self.client.get('/test/2')
@@ -120,7 +120,7 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/<url>')
         def a_test_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/test')
         self.client.get('/test2')
@@ -158,7 +158,7 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/<url>')
         def a_legacy_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/test')
         self.client.get('/test2')
@@ -204,7 +204,7 @@ class GroupByTest(BaseTestCase):
 
         @self.app.route('/<url>')
         def a_test_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/test?x=1')
         self.client.get('/test?x=2')
@@ -225,17 +225,13 @@ class GroupByTest(BaseTestCase):
 
     def test_group_by_func(self):
         def composite(r):
-            return '%s::%s >> %s' % (
-                r.method,
-                r.path,
-                r.args.get('type', 'none')
-            )
+            return f"{r.method}::{r.path} >> {r.args.get('type', 'none')}"
 
         self.metrics(group_by=composite)
 
         @self.app.route('/<url>', methods=['GET', 'POST'])
         def a_test_endpoint(url):
-            return url + ' is OK'
+            return f'{url} is OK'
 
         self.client.get('/sample?type=A')
         self.client.get('/sample?type=Beta')
@@ -256,7 +252,7 @@ class GroupByTest(BaseTestCase):
 
     def test_group_by_lambda_is_not_supported(self):
         try:
-            self.metrics(group_by=lambda r: '%s-%s' % (r.method, r.path))
+            self.metrics(group_by=lambda r: f'{r.method}-{r.path}')
             self.fail('Expected to fail on grouping by lambda')
         except Exception as ex:
             self.assertIn('invalid label', str(ex).lower())

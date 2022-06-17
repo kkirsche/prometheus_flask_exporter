@@ -51,10 +51,7 @@ class BlueprintTest(unittest.TestCase):
             @self.metrics.summary('requests_by_status', 'Request latencies by status',
                                   labels={'status': lambda r: r.status_code})
             def get(self):
-                if 'fail' in request.args:
-                    return 'Not OK', 400
-                else:
-                    return 'OK'
+                return ('Not OK', 400) if 'fail' in request.args else 'OK'
 
         blueprint = Blueprint('v1', __name__, url_prefix='/v1')
         api = Api(blueprint)

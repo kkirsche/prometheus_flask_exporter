@@ -106,7 +106,7 @@ class ExtensionsTest(BaseTestCase):
             try:
                 obj = extension_type(app=None, **kwargs)
             except Exception as ex:
-                self.fail('Failed to instantiate %s: %s' % (extension_type.__name__, ex))
+                self.fail(f'Failed to instantiate {extension_type.__name__}: {ex}')
 
             for arg, value in kwargs.items():
                 if arg == 'api':
@@ -114,12 +114,19 @@ class ExtensionsTest(BaseTestCase):
                 if arg == 'path':
                     continue  # path is set to None in many multiprocess implementations
 
-                if hasattr(obj, '_' + arg):
-                    self.assertIs(getattr(obj, '_' + arg), value,
-                                  'Unexpected %s object in %s' % (arg, extension_type.__name__))
+                if hasattr(obj, f'_{arg}'):
+                    self.assertIs(
+                        getattr(obj, f'_{arg}'),
+                        value,
+                        f'Unexpected {arg} object in {extension_type.__name__}',
+                    )
+
                 else:
-                    self.assertIs(getattr(obj, arg), value,
-                                  'Unexpected %s object in %s' % (arg, extension_type.__name__))
+                    self.assertIs(
+                        getattr(obj, arg),
+                        value,
+                        f'Unexpected {arg} object in {extension_type.__name__}',
+                    )
 
     def test_prometheus_multiproc_env_var_change(self):
         for extension_type in self._all_extensions:
@@ -139,9 +146,14 @@ class ExtensionsTest(BaseTestCase):
 
                     obj = extension_type(app=app)
                 except Exception as ex:
-                    self.fail('Failed to instantiate %s: %s' % (extension_type.__name__, ex))
+                    self.fail(f'Failed to instantiate {extension_type.__name__}: {ex}')
 
-                self.assertIs(obj.app, flask_app, 'Unexpected app object in %s' % extension_type.__name__)
+                self.assertIs(
+                    obj.app,
+                    flask_app,
+                    f'Unexpected app object in {extension_type.__name__}',
+                )
+
 
                 # Check only upper case env var works
                 if os.environ.get('prometheus_multiproc_dir'):
@@ -155,6 +167,10 @@ class ExtensionsTest(BaseTestCase):
 
                     obj2 = extension_type(app=app2)
                 except Exception as ex:
-                    self.fail('Failed to instantiate %s: %s' % (extension_type.__name__, ex))
+                    self.fail(f'Failed to instantiate {extension_type.__name__}: {ex}')
 
-                self.assertIs(obj2.app, flask_app2, 'Unexpected app object in %s' % extension_type.__name__)
+                self.assertIs(
+                    obj2.app,
+                    flask_app2,
+                    f'Unexpected app object in {extension_type.__name__}',
+                )

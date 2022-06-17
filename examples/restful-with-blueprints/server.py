@@ -17,10 +17,7 @@ class Test(Resource):
         'code': lambda r: r.status_code
     })
     def get():
-        if 'fail' in request.args:
-            return 'Not OK', 400
-        else:
-            return 'OK'
+        return ('Not OK', 400) if 'fail' in request.args else 'OK'
 
 
 restful_api.add_resource(Test, '/test', endpoint='test')

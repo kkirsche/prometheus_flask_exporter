@@ -16,10 +16,7 @@ class Test(Resource):
         'code': lambda r: r.status_code
     })
     def get():
-        if 'fail' in request.args:
-            return None, 400
-        else:
-            return None, 200
+        return (None, 400) if 'fail' in request.args else (None, 200)
 
 
 restful_api.add_resource(Test, '/api/v1/test', endpoint='test')

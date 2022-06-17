@@ -272,11 +272,7 @@ class PrometheusMetrics(object):
         @self.do_not_track()
         def prometheus_metrics():
             accept_header = request.headers.get("Accept")
-            if 'name[]' in request.args:
-                names = request.args.getlist('name[]')
-            else:
-                names = None
-
+            names = request.args.getlist('name[]') if 'name[]' in request.args else None
             generated_data, content_type = self.generate_metrics(accept_header, names)
             headers = {'Content-Type': content_type}
             return generated_data, 200, headers
@@ -460,9 +456,10 @@ class PrometheusMetrics(object):
             if hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
                 return response
 
-            if self.excluded_paths:
-                if any(pattern.match(request.path) for pattern in self.excluded_paths):
-                    return response
+            if self.excluded_paths and any(
+                pattern.match(request.path) for pattern in self.excluded_paths
+            ):
+                return response
 
             if hasattr(request, 'prom_start_time') and self._not_yet_handled('duration_reported'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
@@ -477,7 +474,7 @@ class PrometheusMetrics(object):
                     'status': _to_status_code(response.status_code),
                     duration_group_name: group
                 }
-                request_duration_labels.update(labels.values_for(response))
+                request_duration_labels |= labels.values_for(response)
 
                 request_duration_metric.labels(**request_duration_labels).observe(total_time)
 
@@ -493,11 +490,12 @@ class PrometheusMetrics(object):
             if not exception or hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
                 return
 
-            if self.excluded_paths:
-                if any(pattern.match(request.path) for pattern in self.excluded_paths):
-                    return
+            if self.excluded_paths and any(
+                pattern.match(request.path) for pattern in self.excluded_paths
+            ):
+                return
 
-            response = make_response('Exception: %s' % exception, 500)
+            response = make_response(f'Exception: {exception}', 500)
 
             if callable(duration_group):
                 group = duration_group(request)
@@ -517,7 +515,7 @@ class PrometheusMetrics(object):
                     'status': 500,
                     duration_group_name: group
                 }
-                request_duration_labels.update(labels.values_for(response))
+                request_duration_labels |= labels.values_for(response)
 
                 request_duration_metric.labels(**request_duration_labels).observe(total_time)
 
@@ -671,10 +669,12 @@ class PrometheusMetrics(object):
         def decorator(f):
             @wraps(f)
             def func(*args, **kwargs):
-                if self.exclude_user_defaults and self.excluded_paths:
-                    # exclude based on default excludes
-                    if any(pattern.match(request.path) for pattern in self.excluded_paths):
-                        return f(*args, **kwargs)
+                if (
+                    self.exclude_user_defaults
+                    and self.excluded_paths
+                    and any(pattern.match(request.path) for pattern in self.excluded_paths)
+                ):
+                    return f(*args, **kwargs)
 
                 if before:
                     metric = get_metric(None)
@@ -696,7 +696,7 @@ class PrometheusMetrics(object):
                 except Exception as ex:
                     # if it was re-raised, treat it as an InternalServerError
                     exception = ex
-                    response = make_response('Exception: %s' % ex, 500)
+                    response = make_response(f'Exception: {ex}', 500)
 
                 if hasattr(request, 'prom_exclude_all'):
                     if metric and revert_when_not_tracked:
@@ -731,15 +731,13 @@ class PrometheusMetrics(object):
 
                 metric_call(metric, time=total_time)
 
-                if exception:
-                    try:
-                        # re-raise for the Flask error handler
-                        raise exception
-                    except Exception as ex:
-                        return current_app.handle_user_exception(ex)
-
-                else:
+                if not exception:
                     return response
+                try:
+                    # re-raise for the Flask error handler
+                    raise exception
+                except Exception as ex:
+                    return current_app.handle_user_exception(ex)
 
             return func
 
@@ -766,10 +764,7 @@ class PrometheusMetrics(object):
         def label_value(f):
             if not callable(f):
                 return lambda x: f
-            if argspec(f).args:
-                return lambda x: f(x)
-            else:
-                return lambda x: f()
+            return (lambda x: f(x)) if argspec(f).args else (lambda x: f())
 
         class CombinedLabels(object):
             def __init__(self, _labels):
@@ -900,12 +895,11 @@ class PrometheusMetrics(object):
           trying to handle this processing step
         """
 
-        key = 'prom_' + tracking_key
+        key = f'prom_{tracking_key}'
         if hasattr(request, key):
             return False
-        else:
-            setattr(request, key, True)
-            return True
+        setattr(request, key, True)
+        return True
 
 
 class ConnexionPrometheusMetrics(PrometheusMetrics):
